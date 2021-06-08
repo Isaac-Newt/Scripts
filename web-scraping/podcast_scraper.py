@@ -12,6 +12,7 @@ A Script to archive the text descriptions of each episode of the podcast
 # You can obtain one at https://mit-license.org/.
 
 import requests
+import os
 from bs4 import BeautifulSoup
 
 def parse_shownotes(description) -> list:
@@ -71,11 +72,19 @@ def process_page(soup: BeautifulSoup) -> tuple:
 
 def export_contents(parsed_description: list, audio_url: str, title: str) -> None:
     """Write podcast data to files"""
+    # Change current working directory to an episode folder
+    title = "_".join(title.split(":")[0].split())
+    os.makedirs(title)
+    os.chdir("./" + title)
+
     # Write show notes to a text file
     write_shownotes(parsed_description, title)
 
     # Audio to an MP3 file
     retrieve_audio(audio_url, title)
+
+    # Return cwd to program location
+    os.chdir("..")
 
 def main():
     """Main script sequence"""
