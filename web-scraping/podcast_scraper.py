@@ -14,54 +14,79 @@ A Script to archive the text descriptions of each episode of the podcast
 import requests
 from bs4 import BeautifulSoup
 
-#
-# Retrieve Page Contents
-#
+def parse_shownotes(description) -> list:
+    """Parse notes to a list of <p> element texts"""
+    parsed_description: list = []
 
-# TODO: Automate this portion to retrieve URLs from "episodes" page
-url: str = input("Please enter a URL: ")
-page = requests.get(url)
-soup = BeautifulSoup(page.content, 'html.parser')
+    for paragraph in description[4:]:
+        paragraph: str = str(paragraph)
+        paragraph = paragraph[3:-4]
+        parsed_description.append(paragraph)
 
-#
-# Process Page Contents
-#
+    return parsed_description
 
-# Get episode information using BeautifulSoup
-title: str = soup.title.text[:-23]
+def write_shownotes(parsed_description: list, title: str) -> None:
+    """Write shownotes to a text file"""
+    file_name: str = title + ".txt"
+    with open("notes.txt", "w") as export_file:
+        for p in parsed_description:
+            export_file.write(f"{p}\n")
 
-parsed_description: list = []
-description = soup.select("div.entry-content > p")
-
-for paragraph in description[4:]:
-    paragraph: str = str(paragraph)
-    paragraph = paragraph[3:-4]
-    parsed_description.append(paragraph)
-
-# Get episode MP3 file
-audio_big_link = soup.select("a.powerpress_link_d")[0]
-abl_attributes: dict = audio_big_link.attrs
-audio_url: str = abl_attributes["href"]
-
-#
-# Export processed contents
-#
-
-# Show notes to a text file
-with open("export.txt", "w") as export_file:
-    for p in parsed_description:
-        export_file.write(f"{p}\n")
-
-# Audio to an MP3 file
-# TODO: Make this part work. Fails to actually write to any file,
-#       even though running this code on its own works fine.
-audio_object = requests.get(audio_url)
-
-episode_name: str = title + ".mp3"
-print(f"episode name: {episode_name}")
-print(f"Audio URL: {audio_url}")
-"""
-with open(episode_name, "wb") as export_audio:
+def retrieve_audio(audio_url: str, title: str) -> None:
+    """
+    Given a valid url, retrieve podcast audio and write to
+    a local mp3 file named with the given title.
+    """
+    # TODO: Make this part work. Fails to actually write to any file,
+    #       even though running this code on its own works fine.
     audio_object = requests.get(audio_url)
-    export_audio.write(audio_object.content)
-"""
+    episode_name: str = title + ".mp3"
+
+    with open("audio.mp3", "wb") as export_audio:
+        audio_object = requests.get(audio_url)
+        export_audio.write(audio_object.content)
+
+def build_soup(url: str):
+    """Retrieve page contents with BeautifulSoup"""
+    # TODO: Automate this portion to retrieve URLs from "episodes" page
+    page = requests.get(url)
+    soup = BeautifulSoup(page.content, 'html.parser')
+
+    return soup
+
+def process_page(soup: BeautifulSoup) -> tuple:
+    """Process page contents"""
+    # Get episode information using BeautifulSoup
+    title: str = str(soup.title.text[:-23])
+
+    description = soup.select("div.entry-content > p")
+    parsed_description: list = parse_shownotes(description)
+
+    # Get episode MP3 file
+    audio_big_link = soup.select("a.powerpress_link_d")[0]
+    abl_attributes: dict = audio_big_link.attrs
+    audio_url: str = abl_attributes["href"]
+
+    return title, parsed_description, audio_url
+
+def export_contents(parsed_description: list, audio_url: str, title: str) -> None:
+    """Write podcast data to files"""
+    # Write show notes to a text file
+    write_shownotes(parsed_description, title)
+
+    # Audio to an MP3 file
+    retrieve_audio(audio_url, title)
+
+def main():
+    """Main script sequence"""
+    url: str = input("Please enter a URL: ")
+    soup: BeautifulSoup = build_soup(url)
+
+    title: str = ""
+    parsed_description: list = []
+    audio_url: str = ""
+    title, parsed_description, audio_url = process_page(soup)
+
+    export_contents(parsed_description, audio_url, title)
+
+main()
