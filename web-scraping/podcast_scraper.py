@@ -47,6 +47,16 @@ def retrieve_audio(audio_url: str, title: str) -> None:
         audio_object = requests.get(audio_url)
         export_audio.write(audio_object.content)
 
+def get_episodes(url: str) -> list:
+    """Make list of episode URLs"""
+    soup = build_soup(url)
+    episode_list: list = []
+
+    # TODO: Select multiple items using BeautifulSoup
+    # article > div.uagb-post__inner-wrap > div.uagb-post__image > a: href
+
+    return episode_list
+
 def build_soup(url: str):
     """Retrieve page contents with BeautifulSoup"""
     # TODO: Automate this portion to retrieve URLs from "episodes" page
