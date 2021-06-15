@@ -28,6 +28,7 @@ def parse_shownotes(description) -> list:
 
 def write_shownotes(parsed_description: list, title: str) -> None:
     """Write shownotes to a text file"""
+    # TODO: Make this string work to create a new file
     file_name: str = title + ".txt"
     with open("notes.txt", "w") as export_file:
         for p in parsed_description:
@@ -38,9 +39,8 @@ def retrieve_audio(audio_url: str, title: str) -> None:
     Given a valid url, retrieve podcast audio and write to
     a local mp3 file named with the given title.
     """
-    # TODO: Make this part work. Fails to actually write to any file,
-    #       even though running this code on its own works fine.
     audio_object = requests.get(audio_url)
+    # TODO: Make this string work to create a new file
     episode_name: str = title + ".mp3"
 
     with open("audio.mp3", "wb") as export_audio:
@@ -53,8 +53,10 @@ def get_episodes(url: str) -> list:
     episode_list: list = []
 
     # TODO: Select multiple items using BeautifulSoup
-    # article > div.uagb-post__inner-wrap > div.uagb-post__image > a: href
+    tags = soup.find_all("div", {"class": "uagb-post__image"})
 
+    episode_list = [tag.findChild("a")["href"] for tag in tags]
+    
     return episode_list
 
 def build_soup(url: str):
@@ -96,16 +98,27 @@ def export_contents(parsed_description: list, audio_url: str, title: str) -> Non
     # Return cwd to program location
     os.chdir("..")
 
-def main():
-    """Main script sequence"""
-    url: str = input("Please enter a URL: ")
+def process_episode(url: str) -> None:
+    """Process each episode given its URL"""
     soup: BeautifulSoup = build_soup(url)
 
     title: str = ""
     parsed_description: list = []
     audio_url: str = ""
+
+    # Monitoring statement
+    print(f"Now Processing {title}")
+    
     title, parsed_description, audio_url = process_page(soup)
 
     export_contents(parsed_description, audio_url, title)
+
+def main():
+    """Main script sequence"""
+    mjb_episodes_url: str = "https://messyjesusbusiness.com/podcast-episodes/"
+    episodes: list = get_episodes(mjb_episodes_url)
+
+    for episode in episodes:
+        process_episode(episode)
 
 main()
