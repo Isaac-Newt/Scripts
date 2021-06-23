@@ -52,16 +52,14 @@ def get_episodes(url: str) -> list:
     soup = build_soup(url)
     episode_list: list = []
 
-    # TODO: Select multiple items using BeautifulSoup
+    # Select multiple items using BeautifulSoup
     tags = soup.find_all("div", {"class": "uagb-post__image"})
-
     episode_list = [tag.findChild("a")["href"] for tag in tags]
     
     return episode_list
 
 def build_soup(url: str):
     """Retrieve page contents with BeautifulSoup"""
-    # TODO: Automate this portion to retrieve URLs from "episodes" page
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
 
@@ -72,6 +70,12 @@ def process_page(soup: BeautifulSoup) -> tuple:
     # Get episode information using BeautifulSoup
     title: str = str(soup.title.text[:-23])
 
+    # Check whether page was valid, if not, raise error and return
+    if title == "Page not found":
+        raise Exception("Episode not found, redirected to 404 page")
+        return -1
+
+    # Get episode show notes
     description = soup.select("div.entry-content > p")
     parsed_description: list = parse_shownotes(description)
 
@@ -98,7 +102,7 @@ def export_contents(parsed_description: list, audio_url: str, title: str) -> Non
     # Return cwd to program location
     os.chdir("..")
 
-def process_episode(url: str) -> None:
+def process_episode(url: str) -> str:
     """Process each episode given its URL"""
     soup: BeautifulSoup = build_soup(url)
 
@@ -106,19 +110,37 @@ def process_episode(url: str) -> None:
     parsed_description: list = []
     audio_url: str = ""
 
-    # Monitoring statement
-    print(f"Now Processing {title}")
-    
-    title, parsed_description, audio_url = process_page(soup)
+    # Monitoring statement: start of episode processing
+    print(f"Now Processing episode at {url}")
 
+    # Get episode information from the page; if not found, return error
+    try:
+        title, parsed_description, audio_url = process_page(soup)
+    except TypeError:
+        return f"Episode at {url} not found, check URL for errors"
+
+    # Export the episode notes and audio to files
     export_contents(parsed_description, audio_url, title)
+
+    # Return with success message
+    return f"{title} Processed Successfully"
 
 def main():
     """Main script sequence"""
     mjb_episodes_url: str = "https://messyjesusbusiness.com/podcast-episodes/"
     episodes: list = get_episodes(mjb_episodes_url)
 
-    for episode in episodes:
-        process_episode(episode)
+    with open("config/saved_episode_urls.txt", "r+") as saved_episodes:
+        # Create a list of episode URL's that have already been processed
+        saved_episodes_list: list = saved_episodes.read().split()
+
+        # For each episode listed, process the ones not yet processed
+        for episode in episodes[:3]:
+            if episode not in saved_episodes_list:
+                result: str = process_episode(episode)
+                print(result)
+                saved_episodes.write(f"{episode}\n")
+            else:
+                print(f"Episode at {url} has previously been processed, continuing to next episode")   
 
 main()
