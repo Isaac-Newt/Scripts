@@ -141,6 +141,7 @@ def main():
                 print(result)
                 saved_episodes.write(f"{episode}\n")
             else:
-                print(f"Episode at {url} has previously been processed, continuing to next episode")   
+                print(f"Episode at {episode} has previously been processed, continuing to next episode")   
 
-main()
+if __name__ == "__main__":
+    main()
