@@ -125,7 +125,7 @@ def process_episode(url: str) -> str:
     # Return with success message
     return f"{title} Processed Successfully"
 
-def main():
+def main(window = None, all_episodes = False):
     """Main script sequence"""
     mjb_episodes_url: str = "https://messyjesusbusiness.com/podcast-episodes/"
     episodes: list = get_episodes(mjb_episodes_url)
@@ -136,10 +136,14 @@ def main():
 
         # For each episode listed, process the ones not yet processed
         for episode in episodes[:3]:
-            if episode not in saved_episodes_list:
+            if episode not in saved_episodes_list or all_episodes:
                 result: str = process_episode(episode)
-                print(result)
-                saved_episodes.write(f"{episode}\n")
+                if window != None:
+                    pass
+                else:
+                    print(result)
+                if not all_episodes:
+                    saved_episodes.write(f"{episode}\n")
             else:
                 print(f"Episode at {episode} has previously been processed, continuing to next episode")   
 
